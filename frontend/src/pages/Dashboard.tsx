@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { Homework } from '../types'
-import { format, parseISO, isToday, isPast, startOfDay } from 'date-fns'
+import { format, parseISO, isToday, isPast, isWithinInterval, addDays, startOfDay, endOfDay } from 'date-fns'
 
 function isOverdue(dueDate: string) {
   return isPast(startOfDay(parseISO(dueDate))) && !isToday(parseISO(dueDate))
@@ -15,15 +15,16 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   })
 
-  // Only show: overdue and due today — exclude Done
-  const dashboardItems = allHomework.filter(h => {
+  const now = new Date()
+
+  const overdueItems  = allHomework.filter(h => h.status !== 'DONE' && isOverdue(h.dueDate))
+  const todayItems    = allHomework.filter(h => h.status !== 'DONE' && isToday(parseISO(h.dueDate)))
+  // This week = tomorrow through 7 days from now, excluding today and overdue
+  const upcomingItems = allHomework.filter(h => {
     if (h.status === 'DONE') return false
     const d = parseISO(h.dueDate)
-    return isOverdue(h.dueDate) || isToday(d)
-  })
-
-  const overdueItems = dashboardItems.filter(h => isOverdue(h.dueDate))
-  const todayItems   = dashboardItems.filter(h => isToday(parseISO(h.dueDate)))
+    return isWithinInterval(d, { start: startOfDay(addDays(now, 1)), end: endOfDay(addDays(now, 7)) })
+  }).sort((a, b) => parseISO(a.dueDate).getTime() - parseISO(b.dueDate).getTime())
 
   const HomeworkTable = ({ items, emptyText }: { items: Homework[], emptyText: string }) => (
     items.length === 0 ? (
@@ -103,6 +104,26 @@ export default function Dashboard() {
           <p className="empty">Loading…</p>
         ) : (
           <HomeworkTable items={todayItems} emptyText="Nothing due today 🎉" />
+        )}
+      </div>
+
+      {/* Upcoming this week card */}
+      <div className="card">
+        <div className="card-header">
+          <h2 style={{ fontSize: 16, fontWeight: 600 }}>
+            📆 Upcoming This Week
+            {upcomingItems.length > 0 && (
+              <span className="badge" style={{ marginLeft: 8, background: '#d1fae5', color: '#065f46' }}>
+                {upcomingItems.length}
+              </span>
+            )}
+          </h2>
+          <Link to="/homework" className="btn btn-ghost btn-sm">View all</Link>
+        </div>
+        {isLoading ? (
+          <p className="empty">Loading…</p>
+        ) : (
+          <HomeworkTable items={upcomingItems} emptyText="Nothing else due this week 🎉" />
         )}
       </div>
     </div>
