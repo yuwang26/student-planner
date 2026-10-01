@@ -1,5 +1,16 @@
 # Student Planner — Project Overview
 
+## Live App
+
+🌐 **[https://student-planner-frontend-production.up.railway.app](https://student-planner-frontend-production.up.railway.app)**
+
+| Service | URL |
+|---|---|
+| Frontend | https://student-planner-frontend-production.up.railway.app |
+| Backend API | https://student-planner-backend-production.up.railway.app |
+
+---
+
 ## What It Is
 
 A full-stack web application that allows students to:
