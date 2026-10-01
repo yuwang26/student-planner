@@ -126,3 +126,8 @@ Railway redeploys automatically on every `git push` to your configured branch by
 **Changes not deploying**
 - Confirm the correct branch is connected in Railway's service settings.
 - Trigger a manual redeploy from the **Deployments** tab.
+
+
+
+
+VITE_API_URL = https://student-planner-backend-production.up.railway.app

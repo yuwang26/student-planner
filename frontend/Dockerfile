@@ -1,4 +1,4 @@
-# Stage 1: build the React app
+# Stage 1: build the React app, test
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
