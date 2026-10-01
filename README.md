@@ -16,7 +16,7 @@
 A full-stack web application that allows students to:
 - Manage courses with colour coding
 - Track homework assignments with due dates and status
-- See a dashboard highlighting overdue and due-today homework
+- See a dashboard with three sections: Overdue, Due Today, and Upcoming This Week
 - Register and log in securely with JWT authentication
 
 ---
@@ -28,7 +28,7 @@ A full-stack web application that allows students to:
 | User auth (register / login / JWT) | ✅ Implemented | Email + password, bcrypt, JWT |
 | Courses CRUD | ✅ Implemented | Name, description, colour |
 | Homework CRUD | ✅ Implemented | Title, description, due date, status, course link |
-| Dashboard | ✅ Implemented | Shows overdue and due-today homework |
+| Dashboard | ✅ Implemented | Three cards: Overdue, Due Today, Upcoming This Week |
 | Due-soon flag | ✅ Implemented | Backend marks homework due within 24 h |
 | Course filter on homework | ✅ Implemented | Client-side filter by course |
 | Containerised (Docker) | ✅ Implemented | Both services have Dockerfiles |
@@ -187,7 +187,7 @@ student-planner/
 |---|---|---|
 | `/login` | Login | Email + password sign in |
 | `/register` | Register | Create new account |
-| `/dashboard` | Dashboard | Overdue and due-today homework alert banner + table |
+| `/dashboard` | Dashboard | Three cards: 🚨 Overdue, 📅 Due Today, 📆 Upcoming This Week (next 7 days) |
 | `/courses` | CoursesPage | List, add, edit, delete courses with colour picker |
 | `/homework` | HomeworkPage | List all homework, filter by course, add/edit/delete, inline status change |
 
