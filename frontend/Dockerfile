@@ -3,9 +3,12 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-COPY . .
+# Declare build arg before COPY so it is available to Vite at build time.
+# - Local (docker compose): empty string; nginx proxies /api/ to the backend container.
+# - Railway: set to the backend public URL via Railway Build Arguments.
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+COPY . .
 RUN npm run build
 
 # Stage 2: serve with nginx
@@ -13,4 +16,6 @@ FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 8080
-CMD ["/bin/sh", "-c", "envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# Substitute PORT and BACKEND_HOST at container startup.
+# Defaults: PORT=8080, BACKEND_HOST=backend (Docker Compose service name).
+CMD ["/bin/sh", "-c", "envsubst '${PORT} ${BACKEND_HOST}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
