@@ -8,12 +8,6 @@ function isOverdue(dueDate: string) {
   return isPast(startOfDay(parseISO(dueDate))) && !isToday(parseISO(dueDate))
 }
 
-function dateLabel(dueDate: string) {
-  if (isOverdue(dueDate)) return 'OVERDUE'
-  if (isToday(parseISO(dueDate))) return 'TODAY'
-  return null
-}
-
 export default function Dashboard() {
   const { data: allHomework = [], isLoading } = useQuery<Homework[]>({
     queryKey: ['homework'],
@@ -31,98 +25,84 @@ export default function Dashboard() {
   const overdueItems = dashboardItems.filter(h => isOverdue(h.dueDate))
   const todayItems   = dashboardItems.filter(h => isToday(parseISO(h.dueDate)))
 
+  const HomeworkTable = ({ items, emptyText }: { items: Homework[], emptyText: string }) => (
+    items.length === 0 ? (
+      <p className="empty">{emptyText}</p>
+    ) : (
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Course</th>
+              <th>Due date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(hw => (
+              <tr key={hw.id} className="due-soon-row">
+                <td>
+                  <span style={isOverdue(hw.dueDate) ? { fontWeight: 700, color: '#b91c1c' } : {}}>
+                    {hw.title}
+                  </span>
+                </td>
+                <td>
+                  <span className="color-dot" style={{ background: hw.courseColor || '#94a3b8' }} />
+                  {hw.courseName}
+                </td>
+                <td style={isOverdue(hw.dueDate) ? { color: '#b91c1c', fontWeight: 700 } : {}}>
+                  {format(parseISO(hw.dueDate), 'MMM d, yyyy')}
+                </td>
+                <td><span className={`status status-${hw.status}`}>{hw.status.replace('_', ' ')}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  )
+
   return (
     <div>
       <h1 className="page-title">Dashboard</h1>
 
-      {/* Banner — only shown when something urgent exists */}
-      {!isLoading && dashboardItems.length > 0 && (
-        <div className="notif-banner">
-          <div className="notif-banner-title">⚠️ Homework requiring attention</div>
-          {dashboardItems.map(hw => (
-            <div key={hw.id} className="notif-item">
-              <span className="color-dot" style={{ background: hw.courseColor || '#94a3b8' }} />
-              <span style={isOverdue(hw.dueDate) ? { fontWeight: 700, color: '#b91c1c' } : {}}>
-                {hw.title}
-              </span>
-              {' '}— {hw.courseName}
-              <span
-                className="badge"
-                style={isOverdue(hw.dueDate)
-                  ? { background: '#fca5a5', color: '#7f1d1d', marginLeft: 6 }
-                  : { marginLeft: 6 }}
-              >
-                {dateLabel(hw.dueDate)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
+      {/* Overdue card */}
       <div className="card">
         <div className="card-header">
-          <h2 style={{ fontSize: 16, fontWeight: 600 }}>
-            Upcoming homework
-            {dashboardItems.length > 0 && (
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#b91c1c' }}>
+            🚨 Overdue
+            {overdueItems.length > 0 && (
               <span className="badge" style={{ marginLeft: 8, background: '#fca5a5', color: '#7f1d1d' }}>
-                {dashboardItems.length} urgent
+                {overdueItems.length}
               </span>
             )}
           </h2>
           <Link to="/homework" className="btn btn-ghost btn-sm">View all</Link>
         </div>
-
         {isLoading ? (
           <p className="empty">Loading…</p>
-        ) : dashboardItems.length === 0 ? (
-          <p className="empty">No overdue or due-today homework 🎉</p>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Course</th>
-                  <th>Due date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Overdue — bold red */}
-                {overdueItems.map(hw => (
-                  <tr key={hw.id} className="due-soon-row">
-                    <td>
-                      <span style={{ fontWeight: 700, color: '#b91c1c' }}>{hw.title}</span>
-                      <span className="badge" style={{ marginLeft: 6, background: '#fca5a5', color: '#7f1d1d' }}>! Overdue</span>
-                    </td>
-                    <td>
-                      <span className="color-dot" style={{ background: hw.courseColor || '#94a3b8' }} />
-                      {hw.courseName}
-                    </td>
-                    <td style={{ color: '#b91c1c', fontWeight: 700 }}>
-                      {format(parseISO(hw.dueDate), 'MMM d, yyyy')}
-                    </td>
-                    <td><span className={`status status-${hw.status}`}>{hw.status.replace('_', ' ')}</span></td>
-                  </tr>
-                ))}
-                {/* Due today */}
-                {todayItems.map(hw => (
-                  <tr key={hw.id} className="due-soon-row">
-                    <td>{hw.title}</td>
-                    <td>
-                      <span className="color-dot" style={{ background: hw.courseColor || '#94a3b8' }} />
-                      {hw.courseName}
-                    </td>
-                    <td>
-                      {format(parseISO(hw.dueDate), 'MMM d, yyyy')}
-                      <span className="badge" style={{ marginLeft: 6 }}>TODAY</span>
-                    </td>
-                    <td><span className={`status status-${hw.status}`}>{hw.status.replace('_', ' ')}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <HomeworkTable items={overdueItems} emptyText="No overdue homework 🎉" />
+        )}
+      </div>
+
+      {/* Due today card */}
+      <div className="card">
+        <div className="card-header">
+          <h2 style={{ fontSize: 16, fontWeight: 600 }}>
+            📅 Due Today
+            {todayItems.length > 0 && (
+              <span className="badge" style={{ marginLeft: 8, background: '#bfdbfe', color: '#1e40af' }}>
+                {todayItems.length}
+              </span>
+            )}
+          </h2>
+        </div>
+        {isLoading ? (
+          <p className="empty">Loading…</p>
+        ) : (
+          <HomeworkTable items={todayItems} emptyText="Nothing due today 🎉" />
         )}
       </div>
     </div>
