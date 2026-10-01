@@ -17,5 +17,5 @@ COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 8080
 # Substitute PORT and BACKEND_HOST at container startup.
-# Defaults: PORT=8080, BACKEND_HOST=backend (Docker Compose service name).
-CMD ["/bin/sh", "-c", "envsubst '${PORT} ${BACKEND_HOST}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# Defaults applied in shell before envsubst (envsubst does not support ${VAR:-default} syntax).
+CMD ["/bin/sh", "-c", "export PORT=${PORT:-8080}; export BACKEND_HOST=${BACKEND_HOST:-backend}; envsubst '${PORT} ${BACKEND_HOST}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
