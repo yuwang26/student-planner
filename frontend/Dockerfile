@@ -1,9 +1,11 @@
-# Stage 1: build the React app, test
+# Stage 1: build the React app
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Stage 2: serve with nginx
