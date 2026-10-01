@@ -315,3 +315,70 @@ Wire all services together into a single `docker-compose.yml` so the entire stac
 | AI (cloud) | OpenAI gpt-4o-mini | Pay per use |
 | AI (local) | Ollama llama3 | Free |
 | Containers | Docker Compose | Free |
+
+---
+
+## Deployment Architecture
+
+### Local — `docker compose up --build`
+
+```
+Browser → http://localhost:5173
+  → nginx (frontend container)
+    → /api/* proxied to http://backend:8080/api/   (Docker Compose internal DNS)
+      → Spring Boot (backend container)
+                ↕
+          H2 file database
+          (volume: /app/data)
+```
+
+| Config | Value | Where set |
+|---|---|---|
+| `VITE_API_URL` | *(empty)* — browser uses relative `/api/...`, nginx proxies it | `docker-compose.yml` build arg |
+| `BACKEND_HOST` | `backend` — Docker Compose service name | `docker-compose.yml` environment |
+| `PORT` | Defaults to `8080` via `${PORT:-8080}` in nginx.conf | nginx.conf fallback |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | `docker-compose.yml` environment |
+
+### Railway — production
+
+```
+Browser → https://frontend.up.railway.app
+  → React app calls VITE_API_URL/api/... directly
+    → https://backend.up.railway.app/api/...
+      → Spring Boot
+            ↕
+      H2 file database
+      (Railway Volume: /app/data)
+```
+
+| Config | Value | Where set |
+|---|---|---|
+| `VITE_API_URL` | `https://<backend>.up.railway.app` | Railway frontend Build Argument |
+| `PORT` | Injected by Railway at runtime | Railway runtime (auto) |
+| `CORS_ALLOWED_ORIGINS` | `https://<frontend>.up.railway.app` | Railway backend Variable |
+| `SPRING_DATASOURCE_URL` | `jdbc:h2:file:/app/data/studentplanner;AUTO_SERVER=TRUE` | Railway backend Variable |
+
+### Vite dev server — `npm run dev` (no Docker)
+
+```
+Browser → http://localhost:5173
+  → Vite dev server (HMR)
+    → /api/* proxied to http://localhost:8080  (vite.config.ts proxy)
+      → Spring Boot running natively (mvn spring-boot:run)
+```
+
+No environment variables needed — the proxy in [`frontend/vite.config.ts`](frontend/vite.config.ts) handles routing automatically.
+
+---
+
+## Key Files
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | Local full-stack setup — starts backend + frontend with one command |
+| `frontend/Dockerfile` | Multi-stage: builds React app with Vite, serves with nginx |
+| `frontend/nginx.conf` | Serves static files; proxies `/api/` to backend (local only) |
+| `backend/Dockerfile` | Multi-stage: builds Spring Boot JAR with Maven, runs with JRE |
+| `backend/src/main/resources/application.properties` | Spring Boot config — datasource, JWT, CORS, server port |
+| `deployment.md` | Step-by-step Railway deployment guide |
+| `fix-logs.md` | Record of all issues fixed during Railway deployment |
